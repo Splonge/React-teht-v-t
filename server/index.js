@@ -1,30 +1,33 @@
 import express from 'express'
 import cors from 'cors'
-import pg from 'pg'
-const port = 3001
-const { Pool } = pg
+import todorouter from './routers/todorouter.js'
+
+const port = process.env.PORT
+
 const app = express()
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
-const openDb = () => {
- const pool = new Pool({
- user: 'postgres',
- host: 'localhost',
- database: 'todo',
- password: 'lassi',
- port: 5432
+app.use('/',todorouter)
+app.listen(port)
+
+app.use((err,req,res,next) => {
+ const statusCode = err.status || 500
+ res.status(statusCode).json({
+ error: {
+ message: err.message,
+ status: statusCode
+ }
  })
- return pool
-}
+})
+
 app.get('/tasks', (req, res) => {
- const pool = openDb()
- pool.query('SELECT * FROM task', (err, result) => {
- if (err) {
- return res.status(500).json({ error: 'Internal server error' })
-  }
- res.status(200).json(result.rows)
- })
+pool.query('SELECT * FROM task', (err, result) => {
+if (err) {
+return res.status(500).json({ error: 'Internal server error' })
+}
+res.status(200).json(result.rows)
+})
 })
 app.listen(port, () => {
 })
@@ -58,4 +61,28 @@ return res.status(404).json({error: 'Task not found'})
 }
 return res.status(200).json({id:id})
 })
+})
+router.get('/', (req, res, next) => {
+    pool.query('SELECT * FROM task', (err, result) => {
+ if (err) {
+ return next (err)
+ }
+ res.status(200).json(result.rows || [])
+ })
+})
+router.delete('/:id', (req, res,next) => {
+ const { id } = req.params
+ pool.query('delete from task WHERE id = $1',
+ [id],
+ (err, result) => {
+ if (err) {
+ return next(err)
+ }
+ if (result.rowCount === 0) {
+ const error = new Error('Task not found')
+ error.status = 404
+ return next(error)
+ }
+ return res.status(200).json({id:id})
+ })
 })
