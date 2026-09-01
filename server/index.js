@@ -1,14 +1,23 @@
 import express from 'express'
 import cors from 'cors'
-import todorouter from './routers/todorouter.js'
+import todoRouter from './routes/todoRouter.js'
+import userRouter from "./routes/userRouter.js"
+import { pool } from '../helper/db.js'
+import { auth } from '../helper/auth.js'
+import { Router } from 'express'
+import { getTasks } from '../controllers/TaskController.js'
+const router = Router()
+router.get("/",getTasks)
 
-const port = process.env.PORT
 
+const port = process.env.PORT || 3001
 const app = express()
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
-app.use('/',todorouter)
+app.use('/tasks',todoRouter)
+app.use('/users',userRouter)
+
 app.listen(port)
 
 app.use((err,req,res,next) => {
@@ -61,14 +70,6 @@ return res.status(404).json({error: 'Task not found'})
 }
 return res.status(200).json({id:id})
 })
-})
-router.get('/', (req, res, next) => {
-    pool.query('SELECT * FROM task', (err, result) => {
- if (err) {
- return next (err)
- }
- res.status(200).json(result.rows || [])
- })
 })
 router.delete('/:id', (req, res,next) => {
  const { id } = req.params

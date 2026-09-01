@@ -1,11 +1,13 @@
 import './App.css'
 import { useState,useEffect } from 'react'
+import { useUser } from './context/useUser'
 import axios from 'axios'
-
-const apiUrl = 'http://localhost:3001'
+import Row from '../components/Row'
+const url = "http://localhost:3001"
 function App() {
-const [task, setTask] = useState('')
-const [tasks, setTasks] = useState([])
+ const [task, setTask] = useState('')
+ const [tasks, setTasks] = useState([])
+ const { user } = useUser()
 useEffect(() => {
 axios.get(`${apiUrl}/tasks`)
 .then(response => {
@@ -18,8 +20,9 @@ alert(error.response.data ? error.response.data.message : error)
 
 const addTask = (e) => {
 e.preventDefault()
+const headers = {headers: {Authorization: `Bearer ${user.token}`}}
 const newTask = { description: task }
-axios.post(`${apiUrl}/tasks`, { task: newTask })
+axios.post(`${apiUrl}/tasks`, { task: newTask },headers)
 .then(response => {
 setTasks(currentTasks => [...currentTasks, response.data])
 setTask('')
@@ -30,7 +33,8 @@ alert(error.response ? error.response.data.error.message : error)
 }
 
 const deleteTask = (deleted) => {
-axios.delete(`${apiUrl}/tasks/${deleted}`)
+const headers = {headers: {Authorization: `Bearer ${user.token}`}}
+axios.delete(`${apiUrl}/tasks/${deleted}`,headers)
 .then(response => {
 setTasks(currentTasks => currentTasks.filter(item => item.id !== deleted))
 })
